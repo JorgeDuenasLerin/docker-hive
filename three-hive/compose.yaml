@@ -1,0 +1,56 @@
+# Documentación oficial:
+#  https://github.com/apache/hive/blob/master/packaging/src/docker/docker-compose.yml
+
+services:
+  db-postgres:
+    image: postgres:${POSTGRES_VERSION}
+    environment:
+      POSTGRES_PASSWORD: "example"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  metastore-standalone:
+    image: apache/hive:4.0.1
+    depends_on:
+      - db-postgres
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      SERVICE_OPTS: >-
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://db-postgres:5432/postgres
+        -Djavax.jdo.option.ConnectionUserName=postgres
+        -Djavax.jdo.option.ConnectionPassword=example
+    volumes:
+      - ./libs/postgresql-42.7.5.jar:/opt/hive/lib/postgres.jar
+    ports:
+      - "9083:9083"  # Puerto del metastore (para que Hive Server2 o clientes se conecten)
+
+  hiveserver2-standalone:
+    image: apache/hive:4.0.1
+    depends_on:
+      - metastore-standalone
+    environment:
+      SERVICE_NAME: hiveserver2
+      IS_RESUME: true
+      SERVICE_OPTS: >-
+        -Dhive.metastore.uris=thrift://metastore-standalone:9083
+    volumes:
+      - ~/libs/postgresql-42.7.5.jar:/opt/hive/lib/postgres.jar
+      - ./hive_warehouse:/opt/hive/data/warehouse/  # Warehouse persistente
+    ports:
+      - "10000:10000"  # JDBC (para clientes como Beeline, JDBC)
+      - "10002:10002"  # Servicio HTTP (opcional, depende de tu uso)
+
+volumes:
+  postgres_data:
+  hive_warehouse:
+
+
+# Servicio	              Puerto  Protocolo	  Uso
+# db-postgres	            5432	  TCP	        Conexión directa a PostgreSQL
+# metastore-standalone	  9083	  Thrift	    Comunicación con Hive Metastore
+# hiveserver2-standalone	10000	  xDBC/Thrift Consultas via Beeline, JDBC, ODBC, Thrift, etc.
+# hiveserver2-standalone	10002	  HTTP	      Interfaz web o herramientas BI

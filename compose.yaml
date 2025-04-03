@@ -1,0 +1,16 @@
+# Ejemplo mínimo de Hive
+# Basado en doc oficial:
+#  https://hub.docker.com/r/apache/hive
+# Launch the HiveServer2 with an embedded Metastore. (Derby as metastore db.)
+services:
+  hiveserver2-min:
+    image: apache/hive:${HIVE_VERSION}
+    container_name: hiveserver2-min
+    environment:
+      - SERVICE_NAME=hiveserver2
+    volumes:
+      - ./titanic/:/var/titanic/
+      - ./data/:/var/data/
+    ports:
+      - "10000:10000"
+      - "10002:10002"
