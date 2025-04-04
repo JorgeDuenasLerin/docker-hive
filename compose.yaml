@@ -4,7 +4,7 @@
 # Launch the HiveServer2 with an embedded Metastore. (Derby as metastore db.)
 services:
   hiveserver2-min:
-    image: apache/hive:${HIVE_VERSION}
+    image: apache/hive:4.0.1
     container_name: hiveserver2-min
     environment:
       - SERVICE_NAME=hiveserver2
